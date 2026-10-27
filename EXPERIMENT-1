@@ -1,0 +1,36 @@
+clc;
+clear;
+close all;
+
+% Read RGB image
+RGB = imread('peppers.png');
+
+% Convert RGB to grayscale
+G = rgb2gray(RGB);
+
+% Convert grayscale to binary
+BW1 = imbinarize(G, 0.5);
+BW2 = imbinarize(G, graythresh(G));
+
+% Display images
+figure;
+
+subplot(2,2,1);
+imshow(RGB);
+title('RGB Image');
+
+subplot(2,2,2);
+imshow(G);
+title('Grayscale Image');
+
+subplot(2,2,3);
+imshow(BW1);
+title('Binary Image (Fixed Threshold)');
+
+subplot(2,2,4);
+imshow(BW2);
+title('Binary Image (Otsu Threshold)');
+
+% Save output images
+imwrite(G, 'peppers_gray.png');
+imwrite(BW2, 'peppers_binary.png');
