@@ -1,0 +1,71 @@
+clc;
+clear;
+close all;
+
+% Part A: Iterative Thresholding and Otsu
+I = imread('coins.png');
+
+T = mean(double(I(:)));
+iter = 0;
+
+while true
+    iter = iter + 1;
+    Tnext = 0.5 * (mean(double(I(I > T))) + ...
+                   mean(double(I(I <= T))));
+    if abs(T - Tnext) < 0.5
+        T = Tnext;
+        break;
+    end
+    T = Tnext;
+end
+
+BWi = I > T;
+level = graythresh(I);
+BWo = imbinarize(I, level);
+
+fprintf('Iterative Threshold = %.2f (%d iterations)\n', T, iter);
+fprintf('Otsu Threshold = %.2f\n', 255*level);
+
+% Part B: Adaptive Thresholding
+R = imread('rice.png');
+
+BWg = imbinarize(R);
+BWa = imbinarize(R, 'adaptive', 'Sensitivity', 0.4);
+
+figure;
+subplot(2,3,1); imshow(I); title('Original Coins');
+subplot(2,3,2); imshow(BWi); title('Iterative Threshold');
+subplot(2,3,3); imshow(BWo); title('Otsu Threshold');
+subplot(2,3,4); imshow(R); title('Original Rice');
+subplot(2,3,5); imshow(BWg); title('Global Threshold');
+subplot(2,3,6); imshow(BWa); title('Adaptive Threshold');
+
+% Part C: Seeded Region Growing
+figure;
+imshow(I);
+title('Select a Seed Point');
+
+[c, r] = ginput(1);
+BWr = grayconnected(I, round(r), round(c), 40);
+
+figure;
+imshow(labeloverlay(I, BWr));
+title('Region Growing');
+
+% Part D: Marker-Controlled Watershed
+bw = imfill(BWo, 'holes');
+
+Dt = -bwdist(~bw);
+Dt = imimposemin(Dt, imextendedmin(Dt, 2));
+
+Lw = watershed(Dt);
+Lw(~bw) = 0;
+
+cc = bwconncomp(bw);
+fprintf('Number of coins detected = %d\n', cc.NumObjects);
+
+figure;
+subplot(1,2,1); imshow(bw); title('Filled Binary Mask');
+subplot(1,2,2);
+imshow(label2rgb(Lw, 'jet', 'k', 'shuffle'));
+title('Watershed Segmentation');
