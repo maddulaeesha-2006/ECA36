@@ -1,0 +1,66 @@
+clc;
+clear;
+close all;
+
+% Edge Detection
+I = imread('circuit.tif');
+methods = {'roberts', 'prewitt', 'sobel', 'log', 'canny'};
+
+figure;
+subplot(2,3,1);
+imshow(I);
+title('Original');
+
+for k = 1:5
+    E = edge(I, methods{k});
+    subplot(2,3,k+1);
+    imshow(E);
+    title(upper(methods{k}));
+
+    fprintf('%s: %d edge pixels\n', methods{k}, nnz(E));
+end
+
+% Gradient Magnitude and Direction
+[Gmag, Gdir] = imgradient(I, 'sobel');
+
+figure;
+subplot(1,2,1);
+imshow(Gmag, []);
+title('Gradient Magnitude');
+
+subplot(1,2,2);
+imshow(Gdir, []);
+title('Gradient Direction');
+
+% Edge Linking Using Hough Transform
+BW = edge(I, 'canny');
+[H, theta, rho] = hough(BW);
+
+P = houghpeaks(H, 10, 'Threshold', ceil(0.3*max(H(:))));
+lines = houghlines(BW, theta, rho, P, ...
+                   'FillGap', 5, 'MinLength', 7);
+
+figure;
+
+subplot(1,2,1);
+imshow(mat2gray(H), 'XData', theta, 'YData', rho, ...
+       'InitialMagnification', 'fit');
+axis on;
+axis normal;
+hold on;
+plot(theta(P(:,2)), rho(P(:,1)), 'rs');
+xlabel('\theta (degrees)');
+ylabel('\rho');
+title('Hough Transform');
+
+subplot(1,2,2);
+imshow(I);
+hold on;
+title('Detected Line Segments');
+
+for k = 1:length(lines)
+    xy = [lines(k).point1; lines(k).point2];
+    plot(xy(:,1), xy(:,2), 'g', 'LineWidth', 2);
+end
+
+fprintf('Number of line segments = %d\n', length(lines));
