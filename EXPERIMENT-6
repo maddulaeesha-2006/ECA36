@@ -1,0 +1,56 @@
+clc;
+clear;
+close all;
+
+% Histogram Processing
+I = imread('pout.tif');
+
+Jeq = histeq(I, 256);
+Jcl = adapthisteq(I, 'ClipLimit', 0.02);
+ref = imread('coins.png');
+Jsp = imhistmatch(I, ref);
+
+imgs = {I, Jeq, Jcl, Jsp};
+titles = {'Original', 'Equalized', 'CLAHE', 'Histogram Matched'};
+
+figure;
+for k = 1:4
+    subplot(4,2,2*k-1);
+    imshow(imgs{k});
+    title(titles{k});
+
+    subplot(4,2,2*k);
+    imhist(imgs{k});
+    title(['Histogram: ' titles{k}]);
+end
+
+% Manual Histogram Equalization
+nk = imhist(I);
+pr = nk / numel(I);
+cdf = cumsum(pr);
+T = uint8(round(255 * cdf));
+Jm = T(double(I) + 1);
+
+figure;
+subplot(1,3,1);
+plot(0:255, T, 'LineWidth', 1.5);
+axis([0 255 0 255]);
+axis square;
+xlabel('Input Level');
+ylabel('Output Level');
+title('Transformation Curve');
+
+subplot(1,3,2);
+imshow(Jm);
+title('Manual Equalization');
+
+subplot(1,3,3);
+imhist(Jm);
+title('Equalized Histogram');
+
+% Compare Statistics
+fprintf('Standard deviation: Original = %.2f, Equalized = %.2f\n', ...
+    std2(I), std2(Jm));
+
+fprintf('Dynamic range: Original = [%d %d], Equalized = [%d %d]\n', ...
+    min(I(:)), max(I(:)), min(Jm(:)), max(Jm(:)));
