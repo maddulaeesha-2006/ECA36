@@ -1,0 +1,60 @@
+clc;
+clear;
+close all;
+
+I = imread('cameraman.tif');
+
+% Part A: Spatial Resolution
+f = [1 2 4 8];
+
+figure;
+for k = 1:length(f)
+    Is = I(1:f(k):end, 1:f(k):end);
+    Id = imresize(Is, size(I), 'nearest');
+
+    subplot(2,2,k);
+    imshow(Id);
+    title(sprintf('%d x %d', size(Is,1), size(Is,2)));
+end
+
+% Part B: Intensity Resolution
+L = [256 64 16 8 4 2];
+
+figure;
+for k = 1:length(L)
+    step = 256 / L(k);
+    Iq = uint8(floor(double(I)/step) * (255/(L(k)-1)));
+
+    subplot(2,3,k);
+    imshow(Iq);
+    title(sprintf('%d Levels', L(k)));
+end
+
+% Part C: Interpolation Methods
+small = imresize(I, 0.25);
+
+Nn = imresize(small, 4, 'nearest');
+Bl = imresize(small, 4, 'bilinear');
+Bc = imresize(small, 4, 'bicubic');
+
+figure;
+subplot(2,2,1);
+imshow(small);
+title('Low Resolution');
+
+subplot(2,2,2);
+imshow(Nn);
+title('Nearest Neighbor');
+
+subplot(2,2,3);
+imshow(Bl);
+title('Bilinear');
+
+subplot(2,2,4);
+imshow(Bc);
+title('Bicubic');
+
+% Calculate PSNR
+fprintf('Nearest PSNR = %.2f dB\n', psnr(Nn, I));
+fprintf('Bilinear PSNR = %.2f dB\n', psnr(Bl, I));
+fprintf('Bicubic PSNR = %.2f dB\n', psnr(Bc, I));
