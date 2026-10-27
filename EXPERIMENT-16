@@ -1,0 +1,48 @@
+clc; clear; close all;
+
+I = imread('cameraman.tif');
+
+% Part A: Bit-Plane Decomposition
+figure('Name', 'Bit Planes');
+
+for b = 1:8
+    subplot(2,4,b);
+    imshow(logical(bitget(I, b)));
+    title(sprintf('Bit Plane %d', b-1));
+end
+
+R4 = bitand(I, uint8(240));
+R2 = bitand(I, uint8(192));
+
+figure('Name', 'Reconstruction from MSB Planes');
+subplot(1,3,1); imshow(I); title('Original');
+subplot(1,3,2); imshow(R4); title(sprintf('4 Planes (%.1f dB)', psnr(R4,I)));
+subplot(1,3,3); imshow(R2); title(sprintf('2 Planes (%.1f dB)', psnr(R2,I)));
+
+% Part B: Lossless Predictive Coding
+X = double(I);
+E = X;
+E(:,2:end) = X(:,2:end) - X(:,1:end-1);
+Xr = cumsum(E, 2);
+
+pI = imhist(I) / numel(I);
+pI = pI(pI > 0);
+
+pE = histcounts(E(:), -255.5:255.5);
+pE = pE(pE > 0) / numel(E);
+
+HI = -sum(pI .* log2(pI));
+HE = -sum(pE .* log2(pE));
+
+fprintf('Entropy of image = %.4f bits/pixel\n', HI);
+fprintf('Entropy of prediction error = %.4f bits/pixel\n', HE);
+fprintf('Achievable CR (image) = %.3f\n', 8/HI);
+fprintf('Achievable CR (error) = %.3f\n', 8/HE);
+fprintf('Lossless reconstruction = %d\n', isequal(Xr,X));
+
+figure('Name', 'Predictive Coding');
+subplot(1,3,1); imshow(I); title('Original');
+subplot(1,3,2); imshow(E, [-50 50]); title('Prediction Error');
+subplot(1,3,3); histogram(E(:), -100:100);
+title('Error Histogram');
+xlabel('Prediction Error');
