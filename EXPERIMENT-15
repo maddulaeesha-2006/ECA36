@@ -1,0 +1,62 @@
+clc; clear; close all;
+
+I = imread('cameraman.tif');
+
+% Part A: Entropy and Huffman Coding
+p = imhist(I) / numel(I);
+sym = find(p > 0) - 1;
+prob = p(p > 0);
+
+H = -sum(prob .* log2(prob));
+dict = huffmandict(sym, prob);
+code = huffmanenco(double(I(:)), dict);
+dec = huffmandeco(code, dict);
+
+Lavg = numel(code) / numel(I);
+
+fprintf('Entropy = %.4f bits/pixel\n', H);
+fprintf('Average code length = %.4f bits/pixel\n', Lavg);
+fprintf('Coding efficiency = %.2f%%\n', 100 * H / Lavg);
+fprintf('Compression ratio = %.3f\n', 8 / Lavg);
+fprintf('Lossless decoding = %d\n', isequal(dec(:), double(I(:))));
+
+[~, ord] = sort(prob, 'descend');
+disp('Five most probable gray levels:');
+
+for k = 1:min(5, numel(ord))
+    fprintf('Level %3d, Probability = %.4f, Code = %s\n', ...
+        dict{ord(k),1}, prob(ord(k)), num2str(dict{ord(k),2}, '%d'));
+end
+
+% Part B: Run-Length Coding
+BW = imread('text.png');
+x = reshape(BW', 1, []);
+
+s = [true, diff(x) ~= 0];
+val = x(s);
+runs = diff([find(s), numel(x) + 1]);
+rec = repelem(val, runs);
+
+bitsPerRun = ceil(log2(max(runs) + 1));
+CRrle = numel(x) / (numel(runs) * bitsPerRun + 1);
+
+fprintf('\nRun-Length Coding of text.png\n');
+fprintf('Number of runs = %d\n', numel(runs));
+fprintf('Bits per run length = %d\n', bitsPerRun);
+fprintf('Compression ratio = %.2f\n', CRrle);
+fprintf('Lossless decoding = %d\n', isequal(rec, x));
+
+disp('First 20 run lengths:');
+disp(runs(1:min(20, numel(runs))));
+
+% Part C: Arithmetic Coding
+seq = [1 2 1 1 3 1 2 1 1 1 3 2 1 1];
+
+counts = accumarray(seq(:), 1)';
+acode = arithenco(seq, counts);
+dseq = arithdeco(acode, counts, numel(seq));
+
+fprintf('\nArithmetic Coding\n');
+fprintf('Symbols = %d, Encoded bits = %d, Bits/symbol = %.2f\n', ...
+    numel(seq), numel(acode), numel(acode) / numel(seq));
+fprintf('Decoded correctly = %d\n', isequal(seq, dseq));
