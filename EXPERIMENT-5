@@ -1,0 +1,55 @@
+clc;
+clear;
+close all;
+
+% Read grayscale image
+I = imread('pout.tif');
+r = im2double(I);
+
+% Gray-level transformations
+s_neg = 1 - r;
+s_log = mat2gray(log(1 + r));
+s_g04 = r.^0.4;
+s_g25 = r.^2.5;
+s_cs = imadjust(I, stretchlim(I), []);
+
+figure;
+subplot(2,3,1); imshow(r); title('Original');
+subplot(2,3,2); imshow(s_neg); title('Negative');
+subplot(2,3,3); imshow(s_log); title('Log');
+subplot(2,3,4); imshow(s_g04); title('Gamma 0.4');
+subplot(2,3,5); imshow(s_g25); title('Gamma 2.5');
+subplot(2,3,6); imshow(s_cs); title('Contrast Stretching');
+
+% Transformation curves
+rr = linspace(0,1,256);
+
+figure;
+plot(rr,1-rr,rr,log(1+rr)/log(2),rr.^0.4,rr.^2.5,rr,'k--');
+legend('Negative','Log','Gamma 0.4','Gamma 2.5','Identity');
+xlabel('Input Level');
+ylabel('Output Level');
+grid on;
+axis square;
+
+% Colour contrast stretching
+RGB = imread('peppers.png');
+
+figure;
+subplot(1,2,1); imshow(RGB); title('Original');
+subplot(1,2,2); imshow(imadjust(RGB,[0.2 0.8],[]));
+title('Contrast Stretched');
+
+% Intensity-level slicing
+A = 0.40;
+B = 0.70;
+
+slice1 = r;
+slice1(r >= A & r <= B) = 1;
+
+slice2 = double(r >= A & r <= B);
+
+figure;
+subplot(1,3,1); imshow(r); title('Original');
+subplot(1,3,2); imshow(slice1); title('Band Highlighted');
+subplot(1,3,3); imshow(slice2); title('Binary Slice');
