@@ -1,0 +1,58 @@
+clc; clear; close all;
+
+X = double(imread('cameraman.tif'));
+
+% Part A: Single-Level 2-D DWT
+[cA1, cH1, cV1, cD1] = dwt2(X, 'haar');
+
+figure('Name', 'Level-1 Subbands');
+subplot(2,2,1); imshow(cA1, []); title('Approximation');
+subplot(2,2,2); imshow(abs(cH1), []); title('Horizontal Detail');
+subplot(2,2,3); imshow(abs(cV1), []); title('Vertical Detail');
+subplot(2,2,4); imshow(abs(cD1), []); title('Diagonal Detail');
+
+X1 = idwt2(cA1, cH1, cV1, cD1, 'haar');
+fprintf('Level-1 reconstruction error = %.2e\n', ...
+    max(abs(X1(:) - X(:))));
+
+% Part B: Two-Level Wavelet Decomposition
+[C, S] = wavedec2(X, 2, 'haar');
+
+A2 = appcoef2(C, S, 'haar', 2);
+[H2, V2, D2] = detcoef2('all', C, S, 2);
+[H1, V1, D1] = detcoef2('all', C, S, 1);
+
+g = @(m) mat2gray(abs(m));
+L2 = [g(A2), g(H2); g(V2), g(D2)];
+pyr = [L2, g(H1); g(V1), g(D1)];
+
+figure('Name', 'Two-Level Pyramid');
+imshow(pyr);
+title('Two-Level Haar Subband Pyramid');
+
+Xr = waverec2(C, S, 'haar');
+fprintf('Level-2 reconstruction error = %.2e\n', ...
+    max(abs(Xr(:) - X(:))));
+
+% Part C: Wavelet Compression
+keep = [0.20 0.10 0.05 0.02];
+Cs = sort(abs(C), 'descend');
+
+figure('Name', 'Wavelet Compression');
+
+for k = 1:numel(keep)
+    thr = Cs(max(1, round(keep(k) * numel(C))));
+    Ct = C .* (abs(C) >= thr);
+
+    Xc = waverec2(Ct, S, 'haar');
+    Xc = uint8(min(max(Xc, 0), 255));
+    p = psnr(Xc, uint8(X));
+
+    fprintf('Coefficients kept = %3.0f%%, PSNR = %.2f dB\n', ...
+        100 * keep(k), p);
+
+    subplot(2,2,k);
+    imshow(Xc);
+    title(sprintf('%.0f%% Coefficients, %.1f dB', ...
+        100 * keep(k), p));
+end
