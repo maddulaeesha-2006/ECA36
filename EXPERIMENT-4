@@ -1,0 +1,74 @@
+clc;
+clear;
+close all;
+
+% Part A: Pixel Neighbourhoods
+A = magic(5);
+disp(A);
+
+r = input('Enter row (2 to 4): ');
+c = input('Enter column (2 to 4): ');
+
+fprintf('Pixel value = %d\n', A(r,c));
+
+N4 = [A(r-1,c), A(r+1,c), A(r,c-1), A(r,c+1)];
+ND = [A(r-1,c-1), A(r-1,c+1), A(r+1,c-1), A(r+1,c+1)];
+N8 = [N4, ND];
+
+disp('N4 ='); disp(N4);
+disp('ND ='); disp(ND);
+disp('N8 ='); disp(N8);
+
+% Part B: 4- and 8-Connectivity
+BW = logical([1 1 0 0 0 0;
+              1 1 0 0 1 0;
+              0 0 1 0 1 0;
+              0 0 0 1 0 0;
+              0 1 0 0 0 1;
+              0 1 0 0 0 1]);
+
+CC4 = bwconncomp(BW, 4);
+CC8 = bwconncomp(BW, 8);
+
+fprintf('4-connectivity components = %d\n', CC4.NumObjects);
+fprintf('8-connectivity components = %d\n', CC8.NumObjects);
+
+% Part C: Distance Between Two Pixels
+I = imread('cameraman.tif');
+
+figure;
+imshow(I);
+title('Select Two Pixels');
+
+[x, y] = ginput(2);
+x = round(x);
+y = round(y);
+
+hold on;
+plot(x, y, 'r+-');
+
+De = sqrt((x(1)-x(2))^2 + (y(1)-y(2))^2);
+D4 = abs(x(1)-x(2)) + abs(y(1)-y(2));
+D8 = max(abs(x(1)-x(2)), abs(y(1)-y(2)));
+
+fprintf('Euclidean distance = %.4f\n', De);
+fprintf('City-block distance = %d\n', D4);
+fprintf('Chessboard distance = %d\n', D8);
+
+% Part D: Distance Maps
+P = false(101);
+P(51,51) = true;
+
+figure;
+
+subplot(1,3,1);
+imshow(bwdist(P,'euclidean'), []);
+title('Euclidean');
+
+subplot(1,3,2);
+imshow(bwdist(P,'cityblock'), []);
+title('City-block');
+
+subplot(1,3,3);
+imshow(bwdist(P,'chessboard'), []);
+title('Chessboard');
